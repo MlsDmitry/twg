@@ -102,22 +102,52 @@ class GameScene(ShowBase):
     
     def handle_move(self, dt):
         SPEED = 1 #constant
-        velocity = LVector3(0)
+        direction = Vec3(0)
 
         if self.mouseWatcherNode.isButtonDown(KeyboardButton.up()):
-            velocity.z += SPEED
+            direction.z += SPEED
         if self.mouseWatcherNode.isButtonDown(KeyboardButton.down()):
-            velocity.z -= SPEED
+            direction.z -= SPEED
         if self.mouseWatcherNode.isButtonDown(KeyboardButton.left()):
-            velocity.x -= SPEED
+            direction.x -= SPEED
         if self.mouseWatcherNode.isButtonDown(KeyboardButton.right()):
-            velocity.x += SPEED
+            direction.x += SPEED
 
+        if abs(self.player.direction.x - direction.x) != 0:
+            self.player.velocity.x = 1.5 
+        if abs(self.player.direction.z - direction.z) != 0:
+            self.player.velocity.z = 1.5 
+        
         # print(self..mouseWatcherNode.isButtonDown(KeyboardButton.
-        if velocity.x != 0 or velocity.z != 0:
-            self.player.vel = velocity
-            print(velocity * dt * self.player.speed)
-            self.player.model.setPos(self.player.model.getPos() + velocity * dt * self.player.speed)
+        if direction.x != 0 or direction.z != 0:
+            self.player.direction = direction
+
+            pos = self.player.model.getPos()
+
+            x = self.player.smooth_damp(pos.x, pos.x + direction.x, self.player.velocity.x, 0.3, 2.5, dt)
+            z = self.player.smooth_damp(pos.z, pos.z + direction.z, self.player.velocity.z, 0.3, 2.5, dt)
+            print(self.player.model.getPos() - Vec3(x, 0, z), self.player.velocity)
+            self.player.model.setPos(Vec3(x * direction.x, -1, z * direction.z))
+            # next_pos = self.player.smooth_damp(self.player.model.getPos(), self.player.model.getPos() + direction, self.player.velocity, 0.3, self.player.max_speed, dt)
+            # print(next_pos)
+            
+            # x = self.player.smooth_step(self.player.velocity.x * dt * 1.5)
+            # z = self.player.smooth_step(self.player.velocity.z * dt * 1.5)
+            # print(self.player.velocity, x, z)
+            
+            # self.player.velocity = self.player.velocity + Vec3(x, 0, z)
+
+            # print(self.player.velocity, self.player.velocity.length())
+
+            # if self.player.velocity.length() > self.player.speed:
+            #     self.player.velocity = Vec3(self.player.speed ** 0.5, 0, self.player.speed ** 0.5)
+            # print('============')
+            # print('Smooth step:', Vec3(self.player.velocity.x * direction.x, 0, self.player.velocity.z * direction.z))
+            # print('Simple:', Vec3(direction * dt * self.player.speed))
+            # print('============')
+            
+            # self.player.model.setPos(self.player.model.getPos() + Vec3(self.player.velocity.x * direction.x, 0, self.player.velocity.z * direction.z))
+            # self.cam.lookAt(self.player.model.getPos())
 
 
     def updateTerrain(self, task):
