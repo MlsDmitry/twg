@@ -1,9 +1,10 @@
 from operator import sub, add
 import matplotlib.pyplot as plt
+import math
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import GeoMipTerrain, Vec3, BitMask32, TextureStage, Texture, KeyboardButton, LVector3, ModifierButtons
-from panda3d.core import loadPrcFileData
+from panda3d.core import loadPrcFileData, rad2Deg, deg2Rad
 
 from core import ModelManager, Player
 import core.config
@@ -97,13 +98,24 @@ class GameScene(ShowBase):
 
     def game_loop(self, task):
         dt = self.clock.dt
+
+        # move player and camera
         self.handle_move(dt)
+        self.handle_cam(dt)
+        
         
         return task.cont
 
+    def handle_cam(self, dt):
+        self.cam.setPos(self.player.model.getPos() + Vec3(-6, -6, -6))
+        vec_n = self.player.direction.normalized()
+        angle = math.atan2(math.cos(vec_n.x), math.sin(vec_n.z)) + deg2Rad(90)
+        # self.cam.setR(rad2Deg(angle))
+        # self.cam.setR(45)  # set cam global Roll rotation
+        # self.cam.setP(self.cam, 65) 
     
     def handle_move(self, dt):
-        SPEED = 1 #constant
+        SPEED = 1
         direction = Vec3(0)
 
         if self.mouseWatcherNode.isButtonDown(KeyboardButton.up()):
@@ -115,66 +127,23 @@ class GameScene(ShowBase):
         if self.mouseWatcherNode.isButtonDown(KeyboardButton.right()):
             direction.x += SPEED
 
-        if abs(self.player.direction.x - direction.x) != 0:
-            self.player.damper_x.reset() 
-        if abs(self.player.direction.z - direction.z) != 0:
-            self.player.damper_z.reset()
+        # check if we are moving
+        if direction == Vec3(0):
+            return
+
+        # check if we are moving backward, if true, then reset velocity.
+        self.player.check_backward(direction)
+
+        # assign new direction
+        self.player.direction = direction
+
+        # move player towards direction
+        self.player.move(dt)
         
-        # print(self..mouseWatcherNode.isButtonDown(KeyboardButton.
-        if direction.x != 0 or direction.z != 0:
-            self.player.direction = direction
+        # rotate player towards direction 
+        self.player.rotate(dt)
 
-            pos = self.player.model.getPos()
-
-            x = self.player.damper_x.smooth_damp(pos.x, pos.x + direction.x, 0.2, dt)
-            z = self.player.damper_z.smooth_damp(pos.z, pos.z + direction.z, 0.2, dt)
-
-            print(x, z)
-            
-            self.player.damper_x_vals.append(x)
-            self.player.damper_z_vals.append(z)
-
-            if len(self.player.damper_x_vals) == 3000 and len(self.player.damper_z_vals) == 3000:
-                plt.plot(self.player.damper_x_vals, color='green')
-                plt.plot(self.player.damper_z_vals, color='red')
-                plt.show()
-                self.player.damper_x_vals = []
-                self.player.damper_z_vals = []
-
-            
-            self.player.model.setPos(Vec3(x, -1, z))
-            
-        
-            # x = self.player.smooth_damp(pos.x, pos.x + direction.x, self.player.velocity.x, 0.3, 2.5, dt)
-            # z = self.player.smooth_damp(pos.z, pos.z + direction.z, self.player.velocity.z, 0.3, 2.5, dt)
-            # print(self.player.model.getPos() - Vec3(x, 0, z), self.player.velocity)
-            # self.player.model.setPos(Vec3(x * direction.x, -1, z * direction.z))
-            # next_pos = self.player.smooth_damp(self.player.model.getPos(), self.player.model.getPos() + direction, self.player.velocity, 0.3, self.player.max_speed, dt)
-            # print(next_pos)
-            
-            # x = self.player.smooth_step(self.player.velocity.x * dt * 1.5)
-            # z = self.player.smooth_step(self.player.velocity.z * dt * 1.5)
-            # print(self.player.velocity, x, z)
-            
-            # self.player.velocity = self.player.velocity + Vec3(x, 0, z)
-
-            # print(self.player.velocity, self.player.velocity.length())
-
-            # if self.player.velocity.length() > self.player.speed:
-            #     self.player.velocity = Vec3(self.player.speed ** 0.5, 0, self.player.speed ** 0.5)
-            # print('============')
-            # print('Smooth step:', Vec3(self.player.velocity.x * direction.x, 0, self.player.velocity.z * direction.z))
-            # print('Simple:', Vec3(direction * dt * self.player.speed))
-            # print('============')
-            
-            # self.player.model.setPos(self.player.model.getPos() + Vec3(self.player.velocity.x * direction.x, 0, self.player.velocity.z * direction.z))
-            # self.cam.lookAt(self.player.model.getPos())
-
-
-    def updateTerrain(self, task):
-        self.terrain.update()
-        return task.cont
-
+         
     def create_map(self, width, height):
         """ Creates a 2D grid of of tiles. """
         counter = 0
