@@ -1,6 +1,6 @@
 from panda3d.core import Vec3
 
-from core import ModelManager
+from core import ModelManager, SmoothDamper
 
 class Player:
 
@@ -19,6 +19,15 @@ class Player:
         self.speed = 2.5
         self.max_speed = 2.5
         self.min_speed = 0.15
+
+        self.damper_x = SmoothDamper(10)
+        # self.damper_x.velocity = 0.3
+        
+        self.damper_z = SmoothDamper(10)
+        # self.damper_z.velocity = 0.3
+        
+        self.damper_x_vals = []
+        self.damper_z_vals = []
         
     def smooth_step(self, x):
         p = (x - self.min_speed) / (self.max_speed - self.min_speed)

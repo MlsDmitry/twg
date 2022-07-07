@@ -1,4 +1,5 @@
 from operator import sub, add
+import matplotlib.pyplot as plt
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import GeoMipTerrain, Vec3, BitMask32, TextureStage, Texture, KeyboardButton, LVector3, ModifierButtons
@@ -11,6 +12,7 @@ import core.config
 config = """
 win-size 1280 720
 show-frame-rate-meter 1
+sync-video 0
 """
 # threading-model Cull/Draw
 # """
@@ -114,9 +116,9 @@ class GameScene(ShowBase):
             direction.x += SPEED
 
         if abs(self.player.direction.x - direction.x) != 0:
-            self.player.velocity.x = 1.5 
+            self.player.damper_x.reset() 
         if abs(self.player.direction.z - direction.z) != 0:
-            self.player.velocity.z = 1.5 
+            self.player.damper_z.reset()
         
         # print(self..mouseWatcherNode.isButtonDown(KeyboardButton.
         if direction.x != 0 or direction.z != 0:
@@ -124,10 +126,29 @@ class GameScene(ShowBase):
 
             pos = self.player.model.getPos()
 
-            x = self.player.smooth_damp(pos.x, pos.x + direction.x, self.player.velocity.x, 0.3, 2.5, dt)
-            z = self.player.smooth_damp(pos.z, pos.z + direction.z, self.player.velocity.z, 0.3, 2.5, dt)
-            print(self.player.model.getPos() - Vec3(x, 0, z), self.player.velocity)
-            self.player.model.setPos(Vec3(x * direction.x, -1, z * direction.z))
+            x = self.player.damper_x.smooth_damp(pos.x, pos.x + direction.x, 0.2, dt)
+            z = self.player.damper_z.smooth_damp(pos.z, pos.z + direction.z, 0.2, dt)
+
+            print(x, z)
+            
+            self.player.damper_x_vals.append(x)
+            self.player.damper_z_vals.append(z)
+
+            if len(self.player.damper_x_vals) == 3000 and len(self.player.damper_z_vals) == 3000:
+                plt.plot(self.player.damper_x_vals, color='green')
+                plt.plot(self.player.damper_z_vals, color='red')
+                plt.show()
+                self.player.damper_x_vals = []
+                self.player.damper_z_vals = []
+
+            
+            self.player.model.setPos(Vec3(x, -1, z))
+            
+        
+            # x = self.player.smooth_damp(pos.x, pos.x + direction.x, self.player.velocity.x, 0.3, 2.5, dt)
+            # z = self.player.smooth_damp(pos.z, pos.z + direction.z, self.player.velocity.z, 0.3, 2.5, dt)
+            # print(self.player.model.getPos() - Vec3(x, 0, z), self.player.velocity)
+            # self.player.model.setPos(Vec3(x * direction.x, -1, z * direction.z))
             # next_pos = self.player.smooth_damp(self.player.model.getPos(), self.player.model.getPos() + direction, self.player.velocity, 0.3, self.player.max_speed, dt)
             # print(next_pos)
             
