@@ -1,4 +1,5 @@
 from operator import sub, add
+import matplotlib.pyplot as plt
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import GeoMipTerrain, Vec3, BitMask32, TextureStage, Texture, KeyboardButton, LVector3, ModifierButtons
@@ -11,6 +12,7 @@ import core.config
 config = """
 win-size 1280 720
 show-frame-rate-meter 1
+sync-video 0
 """
 # threading-model Cull/Draw
 # """
@@ -116,9 +118,26 @@ class GameScene(ShowBase):
         # print(self..mouseWatcherNode.isButtonDown(KeyboardButton.
         if velocity.x != 0 or velocity.z != 0:
             self.player.vel = velocity
-            print(velocity * dt * self.player.speed)
-            self.player.model.setPos(self.player.model.getPos() + velocity * dt * self.player.speed)
 
+            pos = self.player.model.getPos()
+            move = velocity * dt * self.player.speed
+            
+            self.player.model.setPos(pos + move)
+
+            self.player.x_vals.append(pos.x + move.x)
+            self.player.z_vals.append(pos.z + move.z)
+
+            print(pos.x + move.x, pos.z + move.z)
+
+            if len(self.player.x_vals) == 3000 and len(self.player.z_vals) == 3000:
+                plt.plot(self.player.x_vals)
+                plt.plot(self.player.z_vals)
+                plt.show()
+                self.player.x_vals = []
+                self.player.z_vals = []
+
+                
+        
 
     def updateTerrain(self, task):
         self.terrain.update()

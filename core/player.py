@@ -17,8 +17,9 @@ class Player:
 
         self.speed = 5
         self.current_speed = 0
+        self.x_vals = []
+        self.z_vals = []
         
     def smooth_step(self, dt):
         # return (self.speed * self.velocity
-
-
+        pass
