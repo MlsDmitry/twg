@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import GeoMipTerrain, Vec3, BitMask32, TextureStage, Texture, KeyboardButton, LVector3, ModifierButtons
+from panda3d.core import GeoMipTerrain, Vec3, BitMask32, TextureStage, Texture, KeyboardButton, LVector3, ModifierButtons, CollisionTraverser, CollisionHandlerPusher, CollisionNode, CollisionBox
 from panda3d.core import loadPrcFileData, rad2Deg, deg2Rad
 
 from core import ModelManager, Player
@@ -37,18 +37,41 @@ class GameScene(ShowBase):
         # load models
         self.load_scene()
 
+        # collision code start
+        
+        # prevents nominated solid objects from intersecting other solid objects.
+        self.pusher = CollisionHandlerPusher()
+        
+        # collision code end
+        
         self.player = Player()
+        self.player.model.setTwoSided(True)
+        # self.player.model.setColor(0, 1, 1, 1)
         self.player.model.reparentTo(render)
+
+        # axis indication
+        self.axis = loader.loadModel('zup-axis')
+        self.axis.reparentTo(self.render)
+        self.axis.setPos(-1, -1, 0)
+        self.axis.setScale(0.2)
 
         # load texture for cubes
         self.tex = self.loader.loadTexture("textures/LPC_Terrain/block_#.png", multiview=True)
 
-        self.create_map(10, 10)
+        self.create_map(10, 30)
 
         self.accept("escape", exit)
 
-        taskMgr.add(self.game_loop, 'game_loop')
+        taskMgr.add(self.game_loop, 'game loop')
+        taskMgr.add(self.mouse_task, 'mouse task')
 
+
+    def record(self):
+        self.movie(namePrefix='frame', duration=15, fps=30, format='png')
+
+    def mouse_task(self, task):
+        self.axis.setHpr(self.cam.getHpr())
+        return task.cont
 
     def get_cam_cords(self):
         return self.cam.getX(), self.cam.getY(), self.cam.getZ()
@@ -64,18 +87,14 @@ class GameScene(ShowBase):
         # move player and camera
         self.handle_move(dt)
         self.handle_cam(dt)
-        
-        
+
         return task.cont
+
 
     def handle_cam(self, dt):
         self.cam.setPos(self.player.model.getPos() + Vec3(-6, -6, -6))
-        vec_n = self.player.direction.normalized()
-        angle = math.atan2(math.cos(vec_n.x), math.sin(vec_n.z)) + deg2Rad(90)
-        # self.cam.setR(rad2Deg(angle))
-        # self.cam.setR(45)  # set cam global Roll rotation
-        # self.cam.setP(self.cam, 65) 
-    
+
+        
     def handle_move(self, dt):
         SPEED = 1
         direction = Vec3(0)
@@ -91,8 +110,10 @@ class GameScene(ShowBase):
 
         # check if we are moving
         if direction == Vec3(0):
+            self.player.model.stop()
             return
-
+        
+        
         # check if we are moving backward, if true, then reset velocity.
         self.player.check_backward(direction)
 
@@ -105,6 +126,10 @@ class GameScene(ShowBase):
         # rotate player towards direction 
         self.player.rotate(dt)
 
+        if not self.player.model.getCurrentAnim():
+            self.player.model.loop('walk')
+        # print(self.player.model.getCurrentAnim())
+
          
     def create_map(self, width, height):
         """ Creates a 2D grid of of tiles. """
@@ -113,7 +138,10 @@ class GameScene(ShowBase):
             for x in range(width):
                 tile = self.render.attachNewNode(f'tile-{counter}')
                 tile.setPos(x, 0, z)
-                tile.setTexture(self.tex, 1)
+                if x % 4 == 0 and z % 4 == 0:
+                    tile.setColor((1, 0, 0, 0))
+                else:
+                    tile.setColor((0, 0.5, 0, 0))
                 # tile.setTexScale(TextureStage.getDefault(), 1, 1)
                 self.model_manager.get('box').instanceTo(tile)
                 counter += 1
