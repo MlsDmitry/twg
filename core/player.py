@@ -1,36 +1,34 @@
-from panda3d.core import Vec3
+import math
 
-from core import ModelManager, SmoothDamper
+from panda3d.core import Vec3, rad2Deg, BitMask32, Point3, CollisionNode, CollisionBox
+from direct.actor.Actor import Actor
+
+from core import ModelManager, SmoothDamper, shortest_arc, config
 
 class Player:
 
     def __init__(self):
-        self.model = ModelManager().get('hero')
-        self.model.setPos(Vec3(0, -1, 0))
-        # self.model.setScale(100)
+        # self.model = ModelManager().get('ball')
+        self.model = Actor('egg-models/masha-anim.egg')
+        self.model.setPos(Vec3(0, -2, 0))
+        self.model.setScale(2)
+        # self.model.setColor(0, 0, 0, 1)
+        
         self.model.setP(self.model, 90)
-        self.model.setH(self.model, 90)
+        self.model.setH(self.model, 180)
 
         self.pos = self.model.getPos()
         self.direction = Vec3(0)
-        self.velocity = Vec3(1.5, 0, 1.5)
-        self.counter = 0
-
-        self.speed = 2.5
-        self.max_speed = 2.5
-        self.min_speed = 0.15
 
         self.damper_x = SmoothDamper(10)
-        # self.damper_x.velocity = 0.3
-        
         self.damper_z = SmoothDamper(10)
-
         self.damper_pitch = SmoothDamper(10000)
-        # self.damper_z.velocity = 0.3
-        
-        self.damper_x_vals = []
-        self.damper_z_vals = []
 
+        self.collider = None
+
+        # self.initialize_collision()
+
+        
     def check_backward(self, new_direction):
         if abs(self.direction.x - new_direction.x) != 0:
             self.damper_x.reset()
@@ -39,22 +37,51 @@ class Player:
 
 
     def move(self, dt):
-        pos = self.player.model.getPos()
+        pos = self.model.getPos()
 
-        x = self.player.damper_x.smooth_damp(pos.x, pos.x + direction.x, 0.19, dt)
-        z = self.player.damper_z.smooth_damp(pos.z, pos.z + direction.z, 0.19, dt)
+        x = self.damper_x.smooth_damp(pos.x, pos.x + self.direction.x, 0.25, dt)
+        z = self.damper_z.smooth_damp(pos.z, pos.z + self.direction.z, 0.25, dt)
 
-        self.model.setPos(Vec3(x, -1, z))
+        self.model.setPos(Vec3(x, -2.9, z))
 
     def rotate(self, dt):
         # normalize direction vector
         vec_n = self.direction.normalized()
         # get angle between x and z in radians and convert to degrees
-        angle = rad2Deg(math.atan2(vec_n.x, vec_n.z))
+        angle = math.atan2(vec_n.z, vec_n.x)
+        angle = rad2Deg(angle)
+        # print(self.model.getP(), angle, shortest_arc(self.model.getP(), angle))
+        # if angle < 0:
+        #     angle = 360 + angle
+        # print(angle)
         # adjust angle because of the model rotated wrongly
-        angle = self.damper_pitch.smooth_damp(self.player.model.getP(), angle + 270, 0.3, dt)
+        angle = self.damper_pitch.smooth_damp(self.model.getP(), angle + 180, 0.3, dt)
         # rotate player
-        self.player.model.setP(angle)
+        self.model.setP(angle)
 
-
-
+    def initialize_collision(self):
+        # col_node = CollisionNode("player")
+        # col_node.setFromCollideMask(BitMask32.allOff())
+        # col_node.setIntoCollideMask(BitMask32(0x4))
+        # col_node.addSolid(
+        #     CollisionBox(
+        #         Point3(1 / 4, -1 / 4, 0.3 / 4),
+        #         Point3(-1 / 4, 1 / 4, 3.3 / 4)
+        #     )
+        # )
+        # print(self.model.ls())
+        # print(self.model.ls())
+        # collide_node = self.model.find('**/Cube')
+        # print(collide_node)
+        # self.model.setCollideMask(BitMask32.bit(1))
+        # collide_node.node().setFromCollideMask(BitMask32.bit(1))
+        # self.model.setIntoCollideMask(BitMask32.allOff())
+        # collide_node.node().setIntoCollideMask(BitMask32.allOff())
+        # .node().setIntoCollideMask(BitMask32.bit(0))
+        # collide_node.show()
+        # self.model.
+        # collide_node.hide()
+        # print(collide_node)
+        # self.collider = collide_node
+        
+        pass

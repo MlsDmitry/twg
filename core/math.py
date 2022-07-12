@@ -1,8 +1,17 @@
-from math import inf
+from math import inf, fabs, pi
 
 
 def clamp(num, a, b):
     return min(max(num, a), b)
+
+
+def shortest_arc(angle_a, angle_b):
+    if fabs(angle_b - angle_a) < pi:
+        return angle_b - angle_a
+    if angle_b > angle_a:
+        return angle_b - angle_a - pi * 2
+
+    return angle_b - angle_a + pi * 2
 
 
 class SmoothDamper:

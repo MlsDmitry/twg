@@ -172,3 +172,9 @@ seamlessTextures
 
 # archives
 *.zip
+
+QPanda3D/
+collision_detection_panda3d
+panda3d
+example*.py
+mars1*
