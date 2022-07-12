@@ -10,8 +10,8 @@ class Player:
     def __init__(self):
         # self.model = ModelManager().get('ball')
         self.model = Actor('egg-models/masha-anim.egg')
-        self.model.setPos(Vec3(0, -2, 0))
-        self.model.setScale(2)
+        self.model.setPos(Vec3(-3200, -10228.9, 50))
+        self.model.setScale(20)
         # self.model.setColor(0, 0, 0, 1)
         
         self.model.setP(self.model, 90)
@@ -39,9 +39,11 @@ class Player:
     def move(self, dt):
         pos = self.model.getPos()
 
-        x = self.damper_x.smooth_damp(pos.x, pos.x + self.direction.x, 0.25, dt)
-        z = self.damper_z.smooth_damp(pos.z, pos.z + self.direction.z, 0.25, dt)
+        x = self.damper_x.smooth_damp(pos.x, pos.x + self.direction.x, 0.05, dt)
+        z = self.damper_z.smooth_damp(pos.z, pos.z + self.direction.z, 0.05, dt)
 
+        print(self.model.getPos())
+        
         self.model.setPos(Vec3(x, -2.9, z))
 
     def rotate(self, dt):
