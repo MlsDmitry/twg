@@ -10,7 +10,8 @@ class Player:
     def __init__(self):
         # self.model = ModelManager().get('ball')
         self.model = Actor('egg-models/masha-anim.egg')
-        self.model.setPos(Vec3(0, -2, 0))
+        self.model.setPos(Vec3(0, 0, 0))
+        self.model.setTwoSided(True)
         self.model.setScale(2)
         # self.model.setColor(0, 0, 0, 1)
         
@@ -26,8 +27,6 @@ class Player:
 
         self.collider = None
 
-        # self.initialize_collision()
-
         
     def check_backward(self, new_direction):
         if abs(self.direction.x - new_direction.x) != 0:
@@ -42,7 +41,7 @@ class Player:
         x = self.damper_x.smooth_damp(pos.x, pos.x + self.direction.x, 0.25, dt)
         z = self.damper_z.smooth_damp(pos.z, pos.z + self.direction.z, 0.25, dt)
 
-        self.model.setPos(Vec3(x, -2.9, z))
+        self.model.setPos(Vec3(x, 0, z))
 
     def rotate(self, dt):
         # normalize direction vector
@@ -60,28 +59,10 @@ class Player:
         self.model.setP(angle)
 
     def initialize_collision(self):
-        # col_node = CollisionNode("player")
-        # col_node.setFromCollideMask(BitMask32.allOff())
-        # col_node.setIntoCollideMask(BitMask32(0x4))
-        # col_node.addSolid(
-        #     CollisionBox(
-        #         Point3(1 / 4, -1 / 4, 0.3 / 4),
-        #         Point3(-1 / 4, 1 / 4, 3.3 / 4)
-        #     )
-        # )
-        # print(self.model.ls())
-        # print(self.model.ls())
-        # collide_node = self.model.find('**/Cube')
-        # print(collide_node)
-        # self.model.setCollideMask(BitMask32.bit(1))
-        # collide_node.node().setFromCollideMask(BitMask32.bit(1))
-        # self.model.setIntoCollideMask(BitMask32.allOff())
-        # collide_node.node().setIntoCollideMask(BitMask32.allOff())
-        # .node().setIntoCollideMask(BitMask32.bit(0))
-        # collide_node.show()
-        # self.model.
-        # collide_node.hide()
-        # print(collide_node)
-        # self.collider = collide_node
+        collide_node = self.model.find('**/Cylinder')
+        collide_node.node().setFromCollideMask(BitMask32.bit(1))
+        collide_node.node().setIntoCollideMask(BitMask32.allOff())
+        collide_node.show()
+
+        self.collider = collide_node
         
-        pass

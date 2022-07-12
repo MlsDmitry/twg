@@ -5,6 +5,7 @@ import math
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import GeoMipTerrain, Vec3, BitMask32, TextureStage, Texture, KeyboardButton, LVector3, ModifierButtons, CollisionTraverser, CollisionHandlerPusher, CollisionNode, CollisionBox, CollisionHandlerQueue, DirectionalLight, AmbientLight, PointLight, OrthographicLens, GeomVertexReader
 from panda3d.core import loadPrcFileData, rad2Deg, deg2Rad
+from panda3d.bullet import *
 
 from core import ModelManager, Player, SmoothDamper
 import core.config
@@ -26,15 +27,13 @@ class GameScene(ShowBase):
         ShowBase.__init__(self)
 
         self.set_background_color(0, 0, 0, 1)
-        
-        # set the camera to the correct position to create an isometric view
-        self.cam.setPos(0, 6, 0)  # set cam global position
-        self.cam.setR(45)  # set cam global Roll rotation
-        self.cam.setP(self.cam, 65)  # set cam local Pitch rotation
-        self.cam.setPos(self.cam, self.cam.getPos() + Vec3(-4, -4, -4))  # set cam local position
 
+        # initialize camera
+        self.init_camera()
+        
         # model manager
         self.model_manager = ModelManager(loader=loader)
+
         # load models
         self.load_scene()
 
@@ -44,62 +43,100 @@ class GameScene(ShowBase):
         self.pusher = CollisionHandlerPusher()
         self.c_handler = CollisionHandlerQueue()
         self.c_trav = CollisionTraverser()
+
         base.cTrav = self.c_trav
+
         # collision code end
         
         self.player = Player()
-        self.player.model.setTwoSided(True)
-        # self.player.model.setColor(0, 1, 1, 1)
-        self.player.model.reparentTo(render)
-        # print(self.player.collider)
-        self.player.initialize_collision()
+        
+        # self.player.model.reparentTo(render)
+        # self.player.initialize_collision()
         # self.c_trav.addCollider(self.player.collider, self.c_handler)
-
-        # axis indication
-        # self.axis = loader.loadModel('zup-axis')
-        # self.axis.reparentTo(self.render)
-        # self.axis.setPos(-1, -1, 0)
-        # self.axis.setScale(0.2)
 
         # load texture for cubes
         self.tex = self.loader.loadTexture("textures/waves5/000.png")
 
         # creat map
         self.create_map(10, 30)
-    
-        # self.pusher.addCollider(self.player.collider, self.player.model)
-        # self.c_trav.addCollider(self.player.collider, base.pusher)
-        # self.c_trav.showCollisions(render)
-
-        self.accept("escape", exit)
 
         taskMgr.add(self.game_loop, 'game loop')
-        taskMgr.add(self.mouse_task, 'mouse task')
 
-        # self.dlnp.lookAt(self.map_model)
-        # self.map_model.setLightOff()
-        # self.map_model.setLight(self.dlnp)
-        # lens = OrthographicLens()
-        # lens.setFilmSize(16, 9)
-        # lens.setNearFar(-50, 50)
-        # self.cam.node().setLens(lens)
-        self.map_model.setColor((1, 0, 0, 1))
         self.map_model.reparentTo(render)
+        
         self.map_model.setHpr(180, 90, 0)
         self.map_model.setPos(0, 0, 0)
-        print(self.map_model.getTightBounds())
+
         self.init_light()
+
+
+        # physics
+
+        # debug stuff
+        self.debug_node_path = render.attachNewNode(BulletDebugNode('Debug'))
+        self.debug_node_path.node().showWireframe(True)
+        self.debug_node_path.node().showConstraints(True)
+        self.debug_node_path.node().showBoundingBoxes(True)
+        self.debug_node_path.node().showNormals(True)
+        self.debug_node_path.show()
+
+        # world
+        self.world = BulletWorld()
+        self.world.setGravity(Vec3(0, 0, -9.81))
+        self.world.setDebugNode(self.debug_node_path.node())
+
+        # player
+        self.player.model.clearModelNodes()
+        collision_node = self.payer.model.find('**/Cylinder')
+        
+        body_nps = BulletHelper.fromCollisionSolids(collision_node, True)
+        self.player_np = body_nps[0]
+        self.player_np.reparentTo(render)
+        self.player_np.node().setMass(70)
+        self.player_np.node().setDeactivationEnabled(False)
+
+        self.player.model.reparentTo(self.player_np)
+
+        self.player_np.node().setLinearVelocity(Vec3(0))
+        self.player_np.node().setAngularVelocity(Vec3(0))
+
+
+        # self.player.initialize_collision()
+        # self.c_trav.addCollider(self.player.collider, self.c_handler)
+        self.cam.setPos(self.player.model.getPos() + Vec3(-15, -10, -15))
+        
 
     def init_light(self):
         plight = PointLight('plight')
-        plight.setColor((0.756, 0.266, 0.054, 1))
+        # plight.setColor((0.756, 0.266, 0.054, 1))
+        plight.setColor((1, 0.956, 0.898, 1))
+        
         plnp = render.attachNewNode(plight)
         plight.attenuation = (0, 0.1, 0)
         plnp.setPos(2, -10, 2)
-        render.setLight(plnp)
-        # self.map_model.setLight(plnp)
-        
 
+        # dlight = DirectionalLight('dlight')
+        # dlight.setColor((1, 0.956, 0.898, 1))
+        
+        # dlnp = render.attachNewNode(dlight)
+        # dlnp.setPos(2, -10, 2)
+
+        # alight = AmbientLight('alight')
+        # alight.setColor((1, 0.956, 0.898, 1))
+
+        # alnp = render.attachNewNode(alight)
+        
+        # render.setLight(plnp)
+        render.setLight(plnp)
+        # self.map_model.setLight(dlnp)
+
+    def init_camera(self):
+        self.cam.setR(45)  # set cam global Roll rotation
+        self.cam.setP(self.cam, 65)  # set cam local Pitch rotation
+        self.cam.setPos(self.cam, self.cam.getPos() + Vec3(-4, -4, -4))  # set cam local position
+
+        
+        
     def record(self):
         self.movie(namePrefix='frame', duration=15, fps=30, format='png')
 
@@ -126,15 +163,17 @@ class GameScene(ShowBase):
         self.handle_cam(dt)
         self.handle_light(dt)
 
+        self.world.doPhysics(dt)
+
         for i in range(self.c_handler.getNumEntries()):
             entry = self.c_handler.getEntry(i)
-            print(entry)
+            # print(entry)
 
         return task.cont
 
 
     def handle_cam(self, dt):
-        self.cam.setPos(self.player.model.getPos() + Vec3(-15, -10, -15))
+        # self.cam.setPos(self.player.model.getPos() + Vec3(-15, -10, -15))
         pass
 
         
@@ -142,13 +181,13 @@ class GameScene(ShowBase):
         SPEED = 1
         direction = Vec3(0)
 
-        if self.mouseWatcherNode.isButtonDown(KeyboardButton.up()):
+        if self.mouseWatcherNode.isButtonDown(KeyboardButton.asciiKey('w')):
             direction.z += SPEED
-        if self.mouseWatcherNode.isButtonDown(KeyboardButton.down()):
+        if self.mouseWatcherNode.isButtonDown(KeyboardButton.asciiKey('s')):
             direction.z -= SPEED
-        if self.mouseWatcherNode.isButtonDown(KeyboardButton.left()):
+        if self.mouseWatcherNode.isButtonDown(KeyboardButton.asciiKey('a')):
             direction.x -= SPEED
-        if self.mouseWatcherNode.isButtonDown(KeyboardButton.right()):
+        if self.mouseWatcherNode.isButtonDown(KeyboardButton.asciiKey('d')):
             direction.x += SPEED
 
         # check if we are moving
@@ -165,7 +204,6 @@ class GameScene(ShowBase):
 
         # move player towards direction
         self.player.move(dt)
-        print(self.player.model.get_pos(self.map_model))
         
         # rotate player towards direction 
         self.player.rotate(dt)
@@ -177,19 +215,11 @@ class GameScene(ShowBase):
          
     def create_map(self, width, height):
         """ Creates a 2D grid of of tiles. """
-        # counter = 0
-        # for z in range(height):
-        #     for x in range(width):
-        #         tile = self.render.attachNewNode(f'tile-{counter}')
-        #         tile.setPos(x, 0, z)
-        #         tile.setTexture(self.tex)
-        #         self.model_manager.get('box').instanceTo(tile)
-        #         tile.find('**/Cube').node().setIntoCollideMask(BitMask32.allOff())
-        #         counter += 1
-                
-        # tile = loader.loadModel('models/box')
-        # tile.setPos(1, -2, 1)
+        tile = loader.loadModel('models/box')
+        tile.setPos(1, -2, 1)
+        tile.setScale(3)
         # tile.setColor((1, 0, 1, 1))
-        # tile.reparentTo(render)
-        # tile.find('**/box').node().setIntoCollideMask(BitMask32.bit(1))
+        tile.reparentTo(render)
+        tile.find('**/box').node().setIntoCollideMask(BitMask32.bit(1))
+        
         self.map_model = self.model_manager.get('map')
