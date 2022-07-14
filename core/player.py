@@ -8,17 +8,17 @@ from core import ModelManager, SmoothDamper, shortest_arc, config
 class Player:
 
     def __init__(self):
-        # self.model = ModelManager().get('ball')
-        self.model = Actor('egg-models/masha-anim.egg')
+        # self.model = loader.loadModel('box')
+        self.model = Actor('egg-models/hero2.bam')
         self.model.setPos(Vec3(0, 0, 0))
         self.model.setTwoSided(True)
-        self.model.setScale(2)
+        self.model.flattenLight()
+        self.model.clearModelNodes()
         # self.model.setColor(0, 0, 0, 1)
         
-        self.model.setP(self.model, 90)
-        self.model.setH(self.model, 180)
+        # self.model.setP(self.model, 90)
+        # self.model.setH(self.model, 180)
 
-        self.pos = self.model.getPos()
         self.direction = Vec3(0)
 
         self.damper_x = SmoothDamper(10)

@@ -176,5 +176,8 @@ seamlessTextures
 QPanda3D/
 collision_detection_panda3d
 panda3d
+Panda3d-Examples
+Desert
+*.mp4
 example*.py
 mars1*
