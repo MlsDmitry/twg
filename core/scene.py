@@ -4,7 +4,7 @@ import math
 
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import GeoMipTerrain, Vec3, BitMask32, TextureStage, Texture, KeyboardButton, LVector3, ModifierButtons, CollisionTraverser, CollisionHandlerPusher, CollisionNode, CollisionBox, CollisionHandlerQueue, DirectionalLight, AmbientLight, PointLight, OrthographicLens, GeomVertexReader
-from panda3d.core import loadPrcFileData, rad2Deg, deg2Rad, Spotlight
+from panda3d.core import loadPrcFileData, rad2Deg, deg2Rad, Spotlight, Material, SphereLight
 from panda3d.bullet import *
 
 from core import ModelManager, Player, SmoothDamper
@@ -178,9 +178,9 @@ class GameScene(ShowBase):
         # self.map_model.setLight(plnp)
         # self.player_np.attachNewNode(plnp)
 
-        self.light_model = loader.loadModel('box')
-        self.light_model.setScale(0.2, 0.2, 0.2)
-        self.light_model.setPos(4, 4, -40)
+        # self.light_model = loader.loadModel('box')
+        # self.light_model.setScale(0.2, 0.2, 0.2)
+        # self.light_model.setPos(4, 4, -40)
 
         # plight = PointLight("plight")
         # plight.setShadowCaster(True, 2048, 2048)
@@ -222,27 +222,68 @@ class GameScene(ShowBase):
         # plnp = self.player_np.attachNewNode(plight)
         # self.player_np.setLight(plnp)
 
-        ambientLight = AmbientLight("ambientLight")
-        ambientLight.setColor((.04, .04, .04, 1))
-        ambient_light = render.attachNewNode(ambientLight)
-        render.setLight(ambient_light)
+        # ambientLight = AmbientLight("ambientLight")
+        # ambientLight.setColor((.04, .04, .04, 1))
+        # ambient_light = render.attachNewNode(ambientLight)
+        # render.setLight(ambient_light)
 
-        self.directionalLight = DirectionalLight("directionalLight")
-        # directionalLight.setDirection(Vec3(1, 0, 0))
-        # directionalLight.setColor((0.6, 0.6, 0.6, 1))
-        self.directionalLight.setShadowCaster(True, 1024, 1024)
-        light = render.attachNewNode(self.directionalLight)
-        render.setLight(light)
+        # self.directionalLight = DirectionalLight("directionalLight")
+        # # directionalLight.setDirection(Vec3(1, 0, 0))
+        # # directionalLight.setColor((0.6, 0.6, 0.6, 1))
+        # self.directionalLight.setShadowCaster(True, 1024, 1024)
+        # light = render.attachNewNode(self.directionalLight)
+        # render.setLight(light)
 
-        self.light_model.reparentTo(light)
-        light.setPos(self.player_np.getPos())
+        # self.light_model.reparentTo(light)
+        # light.setPos(self.player_np.getPos())
 
-        print(light.node())
+        # print(light.node())
         # light.setPos(8, 8, 40)
         # self.direct_light.append(light)
         # render.setLight(light)
 
-        pass
+        # Spotlight
+        
+        # spotlight = Spotlight('spot')
+        # self.light = render.attachNewNode(spotlight)
+        # self.light.setPos(Vec3(10, 0, 50))
+        # self.light.lookAt(self.map_np)
+        # self.light.node().setScene(render)
+        # self.light.node().setShadowCaster(True)
+        # self.light.node().showFrustum()
+        # self.light.node().getLens().setFov(180)
+        # self.light.node().getLens().setNearFar(10, 100)
+        # render.setLight(self.light)
+
+        sphere_light = PointLight('slight')
+        sphere_light.attenuation = (0, 0.1, 0)
+        self.light = render.attachNewNode(sphere_light)
+        self.light.setPos(Vec3(0, 0, 40))
+        self.light.lookAt(self.map_np)
+        self.light.node().setScene(render)
+        self.light.node().setShadowCaster(True)
+        self.light.node().showFrustum()
+        self.light.node().getLens().setFov(70)
+        self.light.node().getLens().setNearFar(10, 100)
+        render.setLight(self.light)
+
+
+        point_light = PointLight('plight')
+        point_light.attenuation = (0, 0.15, 0)
+        self.pl_light = self.player_np.attachNewNode(point_light)
+        self.pl_light.setPos(Vec3(0, 0, 4))
+        self.pl_light.node().setScene(render)
+        self.pl_light.node().setShadowCaster(True)
+        self.pl_light.node().showFrustum()
+        self.pl_light.node().getLens().setFov(180)
+        self.pl_light.node().getLens().setNearFar(10, 1000)
+        render.setLight(self.pl_light)
+        
+        self.alight = render.attachNewNode(AmbientLight("Ambient"))
+        self.alight.node().setColor((0.04, 0.04, 0.04, 1))
+        render.setLight(self.alight)
+
+
 
     def init_camera(self):
         # self.cam.setH(45)  # set cam global Roll rotation
@@ -253,7 +294,7 @@ class GameScene(ShowBase):
         # lens.setFilmSize(30, 25)
         # # lens.setNearFar(-50, 50)
         # self.cam.node().setLens(lens)
-        self.cam.setPos(Vec3(33, -8, 10))
+        self.cam.setPos(Vec3(52, -28, 20))
         pass
         
         
@@ -274,6 +315,7 @@ class GameScene(ShowBase):
             
     def game_loop(self, task):
         dt = globalClock.getDt()
+        ft = globalClock.getFrameTime()
 
         self.world.doPhysics(dt)
         
@@ -362,6 +404,7 @@ class GameScene(ShowBase):
         self.map_model = self.model_manager.get('map')
         # self.map_model.setColor((1, 0, 0, 1))
         self.map_np = self.make_collision_from_model(self.map_model, 'floor', 1.0, self.world, render, Vec3(12.5, 12.5, -2))
+
         print(self.map_model.getBounds())
 
 
@@ -398,8 +441,8 @@ class GameScene(ShowBase):
 
         world.attach_rigid_body(np.node())
 
-        input_model.setTextureOff(1)
-        input_model.setMaterialOff(1)
+        # input_model.setTextureOff(1)
+        # input_model.setMaterialOff(1)
         input_model.reparentTo(np)
 
         return np
