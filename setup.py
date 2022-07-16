@@ -18,6 +18,8 @@ setup(
                 'egg-models/**/*.png',
                 'egg-models/**/*.jpg',
                 'egg-models/**/*.egg',
+                'textures/**/*.png',
+                'sound/*.mp3'
             ],
 
             # Include the OpenGL renderer and OpenAL audio plug-in
