@@ -9,11 +9,13 @@ class Player:
 
     def __init__(self):
         # self.model = loader.loadModel('box')
-        self.model = Actor('egg-models/hero2.bam')
+        self.model = Actor('egg-models/masha-anim2.egg')
+        self.model.setScale(4)
         self.model.setPos(Vec3(0, 0, 0))
         self.model.setTwoSided(True)
         self.model.flattenLight()
         self.model.clearModelNodes()
+        self.model.setH(180)
         # self.model.setColor(0, 0, 0, 1)
         
         # self.model.setP(self.model, 90)
